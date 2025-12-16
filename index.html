@@ -13,7 +13,7 @@
     .box {
       background: white;
       padding: 15px;
-      max-width: 500px;
+      max-width: 520px;
       margin: auto;
       border-radius: 12px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -33,6 +33,7 @@
       background: #4CAF50;
       color: white;
       border: none;
+      cursor: pointer;
     }
 
     .date-group {
@@ -67,6 +68,7 @@
       padding: 6px 10px;
       border-radius: 6px;
       font-size: 14px;
+      cursor: pointer;
     }
 
     @media (max-width: 480px) {
@@ -81,7 +83,7 @@
   <h2>🗓️ Οι δουλειές μου</h2>
 
   <input type="date" id="date">
-  <input type="text" id="task" placeholder="Γράψε τι έχεις να κάνεις…">
+  <input type="text" id="task" placeholder="Γράψε τι έχεις να κάνεις…" onkeydown="handleEnter(event)">
 
   <button onclick="addTask()">➕ Προσθήκη</button>
 
@@ -95,21 +97,32 @@
     localStorage.setItem('tasks', JSON.stringify(data));
   }
 
-  function addTask() {
-    const date = document.getElementById('date').value;
-    const task = document.getElementById('task').value;
+  function formatDate(isoDate) {
+    const [y, m, d] = isoDate.split('-');
+    return `${d}-${m}-${y}`;
+  }
 
-    if (!date || !task) {
+  function addTask() {
+    const dateInput = document.getElementById('date').value;
+    const task = document.getElementById('task').value.trim();
+
+    if (!dateInput || !task) {
       alert('Βάλε ημερομηνία και δουλειά 🙂');
       return;
     }
 
-    if (!data[date]) data[date] = [];
-    data[date].push(task);
+    if (!data[dateInput]) data[dateInput] = [];
+    data[dateInput].push(task);
 
     save();
     render();
     document.getElementById('task').value = '';
+  }
+
+  function handleEnter(e) {
+    if (e.key === 'Enter') {
+      addTask();
+    }
   }
 
   function deleteTask(date, index) {
@@ -123,28 +136,30 @@
     const container = document.getElementById('tasks');
     container.innerHTML = '';
 
-    const today = new Date().toISOString().split('T')[0];
+    const todayISO = new Date().toISOString().split('T')[0];
 
-    for (const date of Object.keys(data).sort()) {
+    Object.keys(data).sort().forEach(date => {
       const group = document.createElement('div');
       group.className = 'date-group';
 
       const title = document.createElement('div');
       title.className = 'date-title';
-      title.textContent = date;
+      title.textContent = formatDate(date);
       group.appendChild(title);
 
       const ul = document.createElement('ul');
 
       data[date].forEach((task, i) => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${task}</span>`;
+        const span = document.createElement('span');
+        span.textContent = task;
 
         const del = document.createElement('button');
         del.textContent = '🗑️';
         del.className = 'delete';
         del.onclick = () => deleteTask(date, i);
 
+        li.appendChild(span);
         li.appendChild(del);
         ul.appendChild(li);
       });
@@ -152,12 +167,12 @@
       group.appendChild(ul);
       container.appendChild(group);
 
-      if (date === today) {
+      if (date === todayISO) {
         setTimeout(() => {
           alert('🔔 Υπενθύμιση! Έχεις δουλειές για σήμερα');
-        }, 500);
+        }, 400);
       }
-    }
+    });
   }
 
   render();
